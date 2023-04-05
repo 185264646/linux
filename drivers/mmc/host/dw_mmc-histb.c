@@ -18,14 +18,29 @@
 
 #define ALL_INT_CLR		0x1ffff
 
-struct hi3798cv200_priv {
+enum dw_mci_histb_type {
+	DW_MCI_TYPE_HI3798CV200,
+};
+
+static struct dw_mci_histb_compat {
+	const char * const compatible;
+	enum dw_mci_histb_type ctrl_type;
+} histb_compat[] = {
+	{
+		.compatible = "hisilicon,hi3798cv200-dw-mshc",
+		.ctrl_type = DW_MCI_TYPE_HI3798CV200,
+	},
+};
+
+struct dw_mci_histb_priv {
+	enum dw_mci_histb_type ctrl_type;
 	struct clk *sample_clk;
 	struct clk *drive_clk;
 };
 
-static void dw_mci_hi3798cv200_set_ios(struct dw_mci *host, struct mmc_ios *ios)
+static void dw_mci_histb_set_ios(struct dw_mci *host, struct mmc_ios *ios)
 {
-	struct hi3798cv200_priv *priv = host->priv;
+	struct dw_mci_histb_priv *priv = host->priv;
 	u32 val;
 
 	val = mci_readl(host, UHS_REG);
@@ -62,7 +77,7 @@ static int dw_mci_hi3798cv200_execute_tuning(struct dw_mci_slot *slot,
 {
 	static const int degrees[] = { 0, 45, 90, 135, 180, 225, 270, 315 };
 	struct dw_mci *host = slot->host;
-	struct hi3798cv200_priv *priv = host->priv;
+	struct dw_mci_histb_priv *priv = host->priv;
 	int raise_point = -1, fall_point = -1;
 	int err, prev_err = -1;
 	int found = 0;
@@ -118,14 +133,20 @@ tuning_out:
 	return err;
 }
 
-static int dw_mci_hi3798cv200_init(struct dw_mci *host)
+static int dw_mci_histb_init(struct dw_mci *host)
 {
-	struct hi3798cv200_priv *priv;
-	int ret;
+	struct dw_mci_histb_priv *priv;
+	struct device_node *np = host->dev->of_node;
+	int ret, idx;
 
 	priv = devm_kzalloc(host->dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
+
+	for (idx = 0; idx < ARRAY_SIZE(histb_compat); idx++) {
+		if (of_device_is_compatible(np, histb_compat[idx].compatible))
+			priv->ctrl_type = histb_compat[idx].ctrl_type;
+	}
 
 	priv->sample_clk = devm_clk_get(host->dev, "ciu-sample");
 	if (IS_ERR(priv->sample_clk)) {
@@ -161,20 +182,29 @@ disable_sample_clk:
 
 static const struct dw_mci_drv_data hi3798cv200_data = {
 	.common_caps = MMC_CAP_CMD23,
-	.init = dw_mci_hi3798cv200_init,
-	.set_ios = dw_mci_hi3798cv200_set_ios,
+	.init = dw_mci_histb_init,
+	.set_ios = dw_mci_histb_set_ios,
 	.execute_tuning = dw_mci_hi3798cv200_execute_tuning,
 };
 
-static int dw_mci_hi3798cv200_probe(struct platform_device *pdev)
+static const struct of_device_id dw_mci_histb_match[] = {
+	{ .compatible = "hisilicon,hi3798cv200-dw-mshc", .data = &hi3798cv200_data },
+	{},
+};
+
+static int dw_mci_histb_probe(struct platform_device *pdev)
 {
-	return dw_mci_pltfm_register(pdev, &hi3798cv200_data);
+	const struct of_device_id *match;
+
+	match = of_match_node(dw_mci_histb_match, pdev->dev.of_node);
+
+	return dw_mci_pltfm_register(pdev, match->data);
 }
 
-static int dw_mci_hi3798cv200_remove(struct platform_device *pdev)
+static int dw_mci_histb_remove(struct platform_device *pdev)
 {
 	struct dw_mci *host = platform_get_drvdata(pdev);
-	struct hi3798cv200_priv *priv = host->priv;
+	struct dw_mci_histb_priv *priv = host->priv;
 
 	clk_disable_unprepare(priv->drive_clk);
 	clk_disable_unprepare(priv->sample_clk);
@@ -184,23 +214,18 @@ static int dw_mci_hi3798cv200_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id dw_mci_hi3798cv200_match[] = {
-	{ .compatible = "hisilicon,hi3798cv200-dw-mshc", },
-	{},
-};
-
-MODULE_DEVICE_TABLE(of, dw_mci_hi3798cv200_match);
-static struct platform_driver dw_mci_hi3798cv200_driver = {
-	.probe = dw_mci_hi3798cv200_probe,
-	.remove = dw_mci_hi3798cv200_remove,
+MODULE_DEVICE_TABLE(of, dw_mci_histb_match);
+static struct platform_driver dw_mci_histb_driver = {
+	.probe = dw_mci_histb_probe,
+	.remove = dw_mci_histb_remove,
 	.driver = {
-		.name = "dwmmc_hi3798cv200",
+		.name = "dwmmc_histb",
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
-		.of_match_table = dw_mci_hi3798cv200_match,
+		.of_match_table = dw_mci_histb_match,
 	},
 };
-module_platform_driver(dw_mci_hi3798cv200_driver);
+module_platform_driver(dw_mci_histb_driver);
 
-MODULE_DESCRIPTION("HiSilicon Hi3798CV200 Specific DW-MSHC Driver Extension");
+MODULE_DESCRIPTION("HiSilicon HiSTB Specific DW-MSHC Driver Extension");
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("platform:dwmmc_hi3798cv200");
+MODULE_ALIAS("platform:dwmmc_histb");
