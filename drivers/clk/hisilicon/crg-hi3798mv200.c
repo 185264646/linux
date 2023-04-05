@@ -402,5 +402,5 @@ static void __exit hi3798mv200_crg_exit(void)
 }
 module_exit(hi3798mv200_crg_exit);
 
-MODULE_LICENSE("GPL v2");
+MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("HiSilicon Hi3798MV200 CRG Driver");
