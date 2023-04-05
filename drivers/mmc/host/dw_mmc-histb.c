@@ -4,6 +4,7 @@
  */
 
 #include <linux/clk.h>
+#include <linux/clk/hisi.h>
 #include <linux/mfd/syscon.h>
 #include <linux/mmc/host.h>
 #include <linux/module.h>
@@ -16,10 +17,14 @@
 #include "dw_mmc.h"
 #include "dw_mmc-pltfm.h"
 
+#define SDMMC_TUNING_CTRL	0x118
+#define SDMMC_TUNING_FIND_EDGE	BIT(5)
+
 #define ALL_INT_CLR		0x1ffff
 
 enum dw_mci_histb_type {
 	DW_MCI_TYPE_HI3798CV200,
+	DW_MCI_TYPE_HI3798MV200,
 };
 
 static struct dw_mci_histb_compat {
@@ -29,6 +34,9 @@ static struct dw_mci_histb_compat {
 	{
 		.compatible = "hisilicon,hi3798cv200-dw-mshc",
 		.ctrl_type = DW_MCI_TYPE_HI3798CV200,
+	}, {
+		.compatible = "hisilicon,hi3798mv200-dw-mshc",
+		.ctrl_type = DW_MCI_TYPE_HI3798MV200,
 	},
 };
 
@@ -133,6 +141,82 @@ tuning_out:
 	return err;
 }
 
+static int dw_mci_hi3798mv200_execute_tuning_mix_mode(struct dw_mci_slot *slot,
+					     u32 opcode)
+{
+	static const int degrees[] = { 0, 45, 90, 135, 180, 225, 270, 315 };
+	struct dw_mci *host = slot->host;
+	struct dw_mci_histb_priv *priv = host->priv;
+	int raise_point = -1, fall_point = -1;
+	int err, prev_err = -1;
+	int found = 0;
+	int regval;
+	int i;
+	int ret;
+
+	// enable tuning
+	ret = hisi_sdmmc_dll_enable_tuning(priv->sample_clk);
+	if (ret < 0)
+		return ret;
+	for (i = 0; i < ARRAY_SIZE(degrees); i++) {
+		clk_set_phase(priv->sample_clk, degrees[i]);
+		mci_writel(host, RINTSTS, ALL_INT_CLR);
+
+		err = mmc_send_tuning(slot->mmc, opcode, NULL);
+		if (!err) {
+			regval = mci_readl(host, TUNING_CTRL);
+			if (regval & SDMMC_TUNING_FIND_EDGE)
+				err = 1;
+			else
+				found = 1;
+		};
+
+		if (i > 0) {
+			if (err && !prev_err)
+				fall_point = i - 1;
+			if (!err && prev_err)
+				raise_point = i;
+		}
+
+		if (raise_point != -1 && fall_point != -1)
+			goto tuning_out;
+
+		prev_err = err;
+		err = 0;
+	}
+
+tuning_out:
+	// disable tuning
+	ret = hisi_sdmmc_dll_disable_tuning(priv->sample_clk);
+	if (ret < 0)
+		return ret;
+	if (found) {
+		if (raise_point == -1)
+			raise_point = 0;
+		if (fall_point == -1)
+			fall_point = ARRAY_SIZE(degrees) - 1;
+		if (fall_point < raise_point) {
+			if ((raise_point + fall_point) >
+			    (ARRAY_SIZE(degrees) - 1))
+				i = fall_point / 2;
+			else
+				i = (raise_point + ARRAY_SIZE(degrees) - 1) / 2;
+		} else {
+			i = (raise_point + fall_point) / 2;
+		}
+
+		clk_set_phase(priv->sample_clk, degrees[i]);
+		dev_dbg(host->dev, "Tuning clk_sample[%d, %d], set[%d]\n",
+			raise_point, fall_point, degrees[i]);
+	} else {
+		dev_err(host->dev, "No valid clk_sample shift! use default\n");
+		err = -EINVAL;
+	}
+
+	mci_writel(host, RINTSTS, ALL_INT_CLR);
+	return err;
+}
+
 static int dw_mci_histb_init(struct dw_mci *host)
 {
 	struct dw_mci_histb_priv *priv;
@@ -187,8 +271,16 @@ static const struct dw_mci_drv_data hi3798cv200_data = {
 	.execute_tuning = dw_mci_hi3798cv200_execute_tuning,
 };
 
+static const struct dw_mci_drv_data hi3798mv200_data = {
+	.common_caps = MMC_CAP_CMD23,
+	.init = dw_mci_histb_init,
+	.set_ios = dw_mci_histb_set_ios,
+	.execute_tuning = dw_mci_hi3798mv200_execute_tuning_mix_mode,
+};
+
 static const struct of_device_id dw_mci_histb_match[] = {
 	{ .compatible = "hisilicon,hi3798cv200-dw-mshc", .data = &hi3798cv200_data },
+	{ .compatible = "hisilicon,hi3798mv200-dw-mshc", .data = &hi3798mv200_data },
 	{},
 };
 
