@@ -1249,6 +1249,8 @@ patternProperties:
     description: SKOV A/S
   "^skyworks,.*":
     description: Skyworks Solutions, Inc.
+  "^skyworth,.*":
+    description: SKYWORTH Group Co., Ltd.
   "^smartlabs,.*":
     description: SmartLabs LLC
   "^smsc,.*":
