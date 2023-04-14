@@ -75,12 +75,25 @@
 			      IRQ_TYPE_LEVEL_LOW)>;
 	};
 
+	/* Hack */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		bl31@c00000 {
+			reg = <0 0xc00000 0 0x40000>;
+			no-map;
+		};
+	};
+
 	/*
 	 * Initialization is done in boot loader.
 	 * The gate clocks are not included in device tree delibrately, see
 	 * comment in driver/clk/hisilicon/crg-hi3798mv200.c for more
 	 * information.
 	 */
+
 	usb2_phy1: hsusb1_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
