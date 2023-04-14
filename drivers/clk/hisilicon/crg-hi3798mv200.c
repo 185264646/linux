@@ -159,6 +159,16 @@ static const struct hisi_gate_clock hi3798mv200_gate_clks[] = {
 		CLK_SET_RATE_PARENT, 0xb8, 5, 0 },
 	{ HISTB_USB2_OTG_UTMI_CLK, "clk_u2_otg_utmi", NULL,
 		CLK_SET_RATE_PARENT, 0xb8, 3, 0 },
+	/*
+	 * Due to the absence of an open-source USB phy driver, we have to do
+	 * the initialization in boot loader. And don't touch the gate clock
+	 * anymore.
+	 *
+	 * usb-nop-xceiv doesn't fulfill our need. Because it may disable the
+	 * gate clock, which results to the need of reinitializing the phy,
+	 * which is currently impossible without a proper driver.
+	 */
+
 	{ HISTB_USB2_PHY1_REF_CLK, "clk_u2_phy1_ref", NULL,
 		CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED, 0xbc, 0, 0 },
 	{ HISTB_USB2_PHY2_REF_CLK, "clk_u2_phy2_ref", NULL,
