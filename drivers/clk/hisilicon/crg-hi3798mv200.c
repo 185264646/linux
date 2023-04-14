@@ -134,6 +134,8 @@ static const struct hisi_gate_clock hi3798mv200_gate_clks[] = {
 		CLK_SET_RATE_PARENT, 0xa0, 0, 0, },
 	{ HISTB_MMC_CIU_CLK, "clk_mmc_ciu", "mmc_mux",
 		CLK_SET_RATE_PARENT, 0xa0, 1, 0, },
+	{ HI3798MV200_EMMC_SAP_DLL_CTRL_DLLMODE, "mmc_sap_dll_ctrl_dllmode", NULL,
+		0, 0x39c, 16, CLK_GATE_SET_TO_DISABLE, },
 	/* Ethernet */
 	{ HI3798MV200_GMAC_CLK, "clk_gmac", NULL,
 		CLK_SET_RATE_PARENT, 0xcc, 3, 0, },
