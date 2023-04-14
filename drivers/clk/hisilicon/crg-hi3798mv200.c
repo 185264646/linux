@@ -160,9 +160,9 @@ static const struct hisi_gate_clock hi3798mv200_gate_clks[] = {
 	{ HISTB_USB2_OTG_UTMI_CLK, "clk_u2_otg_utmi", NULL,
 		CLK_SET_RATE_PARENT, 0xb8, 3, 0 },
 	{ HISTB_USB2_PHY1_REF_CLK, "clk_u2_phy1_ref", NULL,
-		CLK_SET_RATE_PARENT, 0xbc, 0, 0 },
+		CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED, 0xbc, 0, 0 },
 	{ HISTB_USB2_PHY2_REF_CLK, "clk_u2_phy2_ref", NULL,
-		CLK_SET_RATE_PARENT, 0xbc, 2, 0 },
+		CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED, 0xbc, 2, 0 },
 	/* USB3 */
 	{ HISTB_USB3_BUS_CLK, "clk_u3_bus", NULL,
 		CLK_SET_RATE_PARENT, 0xb0, 0, 0 },
