@@ -1071,6 +1071,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-msm8916-samsung-grandmax.dtb \
 	qcom-msm8916-samsung-heatqlte.dtb \
 	qcom-msm8916-samsung-serranove.dtb \
+	qcom-msm8916-thwc-ufi001c.dtb \
 	qcom-msm8960-cdp.dtb \
 	qcom-msm8974-lge-nexus5-hammerhead.dtb \
 	qcom-msm8974-sony-xperia-rhine-amami.dtb \
