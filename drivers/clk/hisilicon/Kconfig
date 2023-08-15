@@ -52,6 +52,13 @@ config COMMON_CLK_HI6220
 	help
 	  Build the Hisilicon Hi6220 clock driver based on the common clock framework.
 
+config COMMON_CLK_HISI_SDMMC_DLL
+	bool "Hisilicon CRG Controlled SDIO/eMMC DLL Driver"
+	depends on ARCH_HISI || COMPILE_TEST
+	default ARCH_HISI
+	help
+	  Build the Hisilicon CRG controlled SDIO/eMMC DLL driver based on the CCF
+
 config RESET_HISI
 	bool "HiSilicon Reset Controller Driver"
 	depends on ARCH_HISI || COMPILE_TEST
