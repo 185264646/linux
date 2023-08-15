@@ -67,6 +67,40 @@ struct hisi_phase_clock {
 	u8			phase_num;
 };
 
+enum hisi_sdmmc_dll_reg {
+	HISI_SDMMC_DLL_REG_CTRL,
+	HISI_SDMMC_DLL_REG_STATUS,
+	HISI_SDMMC_DLL_REG_CNT,
+};
+
+/**
+ * Hisilicon SDMMC DLL flags definitions
+ *
+ * @HISI_SDMMC_DLL_HAS_DSEL: the CTRL register has DSEL bits
+ * @HISI_SDMMC_DLL_HAS_GATE_DSEL: the CTRL register has gate and soft reset bits
+ */
+#define HISI_SDMMC_DLL_HAS_DSEL		BIT(0)
+#define HISI_SDMMC_DLL_HAS_GATE_RST	BIT(1)
+
+/**
+ * hisi_sdmmc_dll - hisilicon sdio/emmc DLL driver data
+ *
+ * @name: clock name
+ * @parent_name: parent clock name
+ * @id: clock id (used in dts)
+ * @flags: CCF clock flags
+ * @dll_flags: clock specific flags, see comments above
+ * @offset: register offset to the base of CRG
+ */
+struct hisi_sdmmc_dll {
+	unsigned int		id;
+	const char 		*name;
+	const char		*parent_name;
+	u32			flags;
+	u32			dll_flags;
+	u32			offset[HISI_SDMMC_DLL_REG_CNT];
+};
+
 struct hisi_divider_clock {
 	unsigned int		id;
 	const char		*name;
@@ -122,6 +156,12 @@ int hisi_clk_register_mux(const struct hisi_mux_clock *, int,
 struct clk *clk_register_hisi_phase(struct device *dev,
 				const struct hisi_phase_clock *clks,
 				void __iomem *base, spinlock_t *lock);
+struct clk *devm_clk_register_hisi_sdmmc_dll(struct device *dev,
+				const struct hisi_sdmmc_dll *dll,
+				spinlock_t *lock);
+int hisi_clk_register_sdmmc_dll(struct device *dev,
+				const struct hisi_sdmmc_dll dlls[],
+				int nums, struct hisi_clock_data *data);
 int hisi_clk_register_phase(struct device *dev,
 				const struct hisi_phase_clock *clks,
 				int nums, struct hisi_clock_data *data);

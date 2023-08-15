@@ -341,3 +341,22 @@ void __init hi6220_clk_register_divider(const struct hi6220_divider_clock *clks,
 		data->clk_data.clks[clks[i].id] = clk;
 	}
 }
+
+int hisi_clk_register_sdmmc_dll(struct device *dev, const struct hisi_sdmmc_dll dlls[], int nums, struct hisi_clock_data *data)
+{
+	int i;
+	struct clk *clk;
+
+	for (i = 0; i < nums; i++) {
+		clk = devm_clk_register_hisi_sdmmc_dll(dev, dlls + i, &hisi_clk_lock);
+		if (IS_ERR(clk)) {
+			dev_err(dev, "failed to register hisi sdmmc dll %s(id = %u).\n", dlls[i].name, dlls[i].id);
+			return PTR_ERR(clk);
+		}
+
+		data->clk_data.clks[dlls[i].id] = clk;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(hisi_clk_register_sdmmc_dll);
