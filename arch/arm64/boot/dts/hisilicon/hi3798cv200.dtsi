@@ -114,7 +114,8 @@
 			ranges = <0x0 0x8a20000 0x1000>;
 
 			usb2_phy1: usb2_phy@120 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy";
+				compatible = "hisilicon,hi3798cv200-usb2-phy",
+					     "hisilicon,inno-usb2-phy";
 				reg = <0x120 0x4>;
 				clocks = <&crg HISTB_USB2_PHY1_REF_CLK>;
 				resets = <&crg 0xbc 4>;
@@ -135,7 +136,8 @@
 			};
 
 			usb2_phy2: usb2_phy@124 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy";
+				compatible = "hisilicon,hi3798cv200-usb2-phy",
+					     "hisilicon,inno-usb2-phy";
 				reg = <0x124 0x4>;
 				clocks = <&crg HISTB_USB2_PHY2_REF_CLK>;
 				resets = <&crg 0xbc 6>;
