@@ -87,6 +87,15 @@ config HISILICON_LPC
 	  Driver to enable I/O access to devices attached to the Low Pin
 	  Count bus on the HiSilicon Hip06/7 SoC.
 
+config HISILICON_PERICTRL_USB2PHY_TEST_BUS
+	tristate "Support for USB2 PHY test bus on PERICTRL core for HiSilicon HiSTB SoCs"
+	depends on ARCH_HISI || COMPILE_TEST
+	depends on OF
+	select REGMAP
+	select PHY_HISI_INNO_USB2
+	help
+	  Support for USB2 PHY test bus register space on PERICTRL core on HiSilicon HiSTB SoCs.
+
 config IMX_WEIM
 	bool "Freescale EIM DRIVER"
 	depends on ARCH_MXC

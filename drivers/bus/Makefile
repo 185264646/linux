@@ -7,6 +7,7 @@
 obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
 obj-$(CONFIG_ARM_INTEGRATOR_LM)	+= arm-integrator-lm.o
 obj-$(CONFIG_HISILICON_LPC)	+= hisi_lpc.o
+obj-$(HISILICON_PERICTRL_USB2PHY_TEST_BUS) += hisi_perictrl_usb2phy_test_bus.p
 obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
 obj-$(CONFIG_MOXTET)		+= moxtet.o
 
