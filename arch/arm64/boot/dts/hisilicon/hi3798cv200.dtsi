@@ -113,41 +113,53 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x8a20000 0x1000>;
 
-			usb2_phy1: usb2_phy@120 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy",
-					     "hisilicon,inno-usb2-phy";
+			usb2_phy1_bus: usb2-phy-bus@120 {
+				compatible = "hisilicon,hi3798cv200-usb2phy-test-bus";
 				reg = <0x120 0x4>;
-				clocks = <&crg HISTB_USB2_PHY1_REF_CLK>;
-				resets = <&crg 0xbc 4>;
-				#address-cells = <1>;
-				#size-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&usb2_phy1_bus>;
 
-				usb2_phy1_port0: phy@0 {
-					reg = <0>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 8>;
-				};
+				usb2_phy1: usb2phy {
+					compatible = "hisilicon,hi3798cv200-usb2-phy",
+						     "hisilicon,inno-usb2-phy";
+					clocks = <&crg HISTB_USB2_PHY1_REF_CLK>;
+					resets = <&crg 0xbc 4>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 
-				usb2_phy1_port1: phy@1 {
-					reg = <1>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 9>;
+					usb2_phy1_port0: phy@0 {
+						reg = <0>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 8>;
+					};
+
+					usb2_phy1_port1: phy@1 {
+						reg = <1>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 9>;
+					};
 				};
 			};
 
-			usb2_phy2: usb2_phy@124 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy",
-					     "hisilicon,inno-usb2-phy";
+			usb2_phy2_bus: usb2-phy-bus@124 {
+				compatible = "hisilicon,hi3798cv200-usb2phy-test-bus";
 				reg = <0x124 0x4>;
-				clocks = <&crg HISTB_USB2_PHY2_REF_CLK>;
-				resets = <&crg 0xbc 6>;
-				#address-cells = <1>;
-				#size-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&usb2_phy2_bus>;
 
-				usb2_phy2_port0: phy@0 {
-					reg = <0>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 10>;
+				usb2_phy2: usb2phy {
+					compatible = "hisilicon,hi3798cv200-usb2-phy",
+						     "hisilicon,inno-usb2-phy";
+					clocks = <&crg HISTB_USB2_PHY2_REF_CLK>;
+					resets = <&crg 0xbc 6>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					usb2_phy2_port0: phy@0 {
+						reg = <0>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 10>;
+					};
 				};
 			};
 
