@@ -8,10 +8,12 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/io.h>
+#include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/reset.h>
 
 #define INNO_PHY_PORT_NUM	2
@@ -22,24 +24,6 @@
 #define UTMI_RST_COMPLETE_TIME	2	/* unit:ms */
 #define POR_RST_COMPLETE_TIME	300	/* unit:us */
 
-#define PHY_TYPE_0	0
-#define PHY_TYPE_1	1
-
-#define PHY_TEST_DATA		GENMASK(7, 0)
-#define PHY_TEST_ADDR_OFFSET	8
-#define PHY0_TEST_ADDR		GENMASK(15, 8)
-#define PHY0_TEST_PORT_OFFSET	16
-#define PHY0_TEST_PORT		GENMASK(18, 16)
-#define PHY0_TEST_WREN		BIT(21)
-#define PHY0_TEST_CLK		BIT(22)	/* rising edge active */
-#define PHY0_TEST_RST		BIT(23)	/* low active */
-#define PHY1_TEST_ADDR		GENMASK(11, 8)
-#define PHY1_TEST_PORT_OFFSET	12
-#define PHY1_TEST_PORT		BIT(12)
-#define PHY1_TEST_WREN		BIT(13)
-#define PHY1_TEST_CLK		BIT(14)	/* rising edge active */
-#define PHY1_TEST_RST		BIT(15)	/* low active */
-
 #define PHY_CLK_ENABLE		BIT(2)
 
 struct hisi_inno_phy_port {
@@ -48,40 +32,20 @@ struct hisi_inno_phy_port {
 };
 
 struct hisi_inno_phy_priv {
-	void __iomem *mmio;
+	struct regmap *regmap;
+	unsigned int stride;
 	struct clk *ref_clk;
 	struct reset_control *por_rst;
 	unsigned int type;
 	struct hisi_inno_phy_port ports[INNO_PHY_PORT_NUM];
 };
 
-static void hisi_inno_phy_write_reg(struct hisi_inno_phy_priv *priv,
+#define PORT_OFFSET		8
+
+static int hisi_inno_phy_write_reg(struct hisi_inno_phy_priv *priv,
 				    u8 port, u32 addr, u32 data)
 {
-	void __iomem *reg = priv->mmio;
-	u32 val;
-	u32 value;
-
-	if (priv->type == PHY_TYPE_0)
-		val = (data & PHY_TEST_DATA) |
-		      ((addr << PHY_TEST_ADDR_OFFSET) & PHY0_TEST_ADDR) |
-		      ((port << PHY0_TEST_PORT_OFFSET) & PHY0_TEST_PORT) |
-		      PHY0_TEST_WREN | PHY0_TEST_RST;
-	else
-		val = (data & PHY_TEST_DATA) |
-		      ((addr << PHY_TEST_ADDR_OFFSET) & PHY1_TEST_ADDR) |
-		      ((port << PHY1_TEST_PORT_OFFSET) & PHY1_TEST_PORT) |
-		      PHY1_TEST_WREN | PHY1_TEST_RST;
-	writel(val, reg);
-
-	value = val;
-	if (priv->type == PHY_TYPE_0)
-		value |= PHY0_TEST_CLK;
-	else
-		value |= PHY1_TEST_CLK;
-	writel(value, reg);
-
-	writel(val, reg);
+	return regmap_write(priv->regmap, port << PORT_OFFSET | addr, data);
 }
 
 static void hisi_inno_phy_setup(struct hisi_inno_phy_priv *priv)
@@ -89,7 +53,7 @@ static void hisi_inno_phy_setup(struct hisi_inno_phy_priv *priv)
 	int i;
 	/* The phy clk is controlled by the port register 0x06. */
 	for (i = 0; i < INNO_PHY_PORT_NUM; i++)
-		hisi_inno_phy_write_reg(priv, i, 0x06, PHY_CLK_ENABLE);
+		hisi_inno_phy_write_reg(priv, i, 0x06 * priv->stride, PHY_CLK_ENABLE);
 	msleep(PHY_CLK_STABLE_TIME);
 }
 
@@ -134,6 +98,30 @@ static const struct phy_ops hisi_inno_phy_ops = {
 	.owner = THIS_MODULE,
 };
 
+static struct regmap *hisi_inno_phy_get_regmap(struct device *dev, struct hisi_inno_phy_priv *priv)
+{
+	struct regmap *regmap;
+
+	if (!dev->parent)
+		return NULL;
+
+	priv->stride = 1;
+	/* First try getting regmap from parent device */
+	regmap = dev_get_regmap(dev->parent, NULL);
+	if (!regmap) {
+		/*
+		 * We are not under a perictrl usb2phy test bus.
+		 * Use direct MMIO instead
+		 *
+		 * When MMIO is used, stride is 4 instead of 1.
+		 */
+		regmap = device_node_to_regmap(dev->parent->of_node);
+		priv->stride = 4;
+	}
+
+	return regmap;
+}
+
 static int hisi_inno_phy_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -142,17 +130,14 @@ static int hisi_inno_phy_probe(struct platform_device *pdev)
 	struct phy_provider *provider;
 	struct device_node *child;
 	int i = 0;
-	int ret;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	priv->mmio = devm_platform_ioremap_resource(pdev, 0);
-	if (IS_ERR(priv->mmio)) {
-		ret = PTR_ERR(priv->mmio);
-		return ret;
-	}
+	priv->regmap = hisi_inno_phy_get_regmap(dev, priv);
+	if (IS_ERR(priv->regmap))
+		return PTR_ERR(priv->regmap);
 
 	priv->ref_clk = devm_clk_get(dev, NULL);
 	if (IS_ERR(priv->ref_clk))
@@ -161,8 +146,6 @@ static int hisi_inno_phy_probe(struct platform_device *pdev)
 	priv->por_rst = devm_reset_control_get_exclusive(dev, NULL);
 	if (IS_ERR(priv->por_rst))
 		return PTR_ERR(priv->por_rst);
-
-	priv->type = (uintptr_t) of_device_get_match_data(dev);
 
 	for_each_child_of_node(np, child) {
 		struct reset_control *rst;
@@ -199,12 +182,9 @@ static int hisi_inno_phy_probe(struct platform_device *pdev)
 }
 
 static const struct of_device_id hisi_inno_phy_of_match[] = {
-	{ .compatible = "hisilicon,inno-usb2-phy",
-	  .data = (void *) PHY_TYPE_0 },
-	{ .compatible = "hisilicon,hi3798cv200-usb2-phy",
-	  .data = (void *) PHY_TYPE_0 },
-	{ .compatible = "hisilicon,hi3798mv100-usb2-phy",
-	  .data = (void *) PHY_TYPE_1 },
+	{ .compatible = "hisilicon,inno-usb2-phy", },
+	{ .compatible = "hisilicon,hi3798cv200-usb2-phy", },
+	{ .compatible = "hisilicon,hi3798mv100-usb2-phy", },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, hisi_inno_phy_of_match);
