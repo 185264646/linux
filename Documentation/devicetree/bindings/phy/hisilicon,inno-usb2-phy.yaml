@@ -15,6 +15,7 @@ properties:
       - enum:
           - hisilicon,hi3798cv200-usb2-phy
           - hisilicon,hi3798mv100-usb2-phy
+          - hisilicon,hi3798mv200-usb2-phy
       - const: hisilicon,inno-usb2-phy
 
   '#address-cells':
@@ -46,6 +47,9 @@ patternProperties:
 
       resets:
         maxItems: 1
+
+      phy_type:
+        const: utmi
 
     required:
       - reg
