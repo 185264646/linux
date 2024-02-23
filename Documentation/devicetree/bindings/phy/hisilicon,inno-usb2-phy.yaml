@@ -14,7 +14,8 @@ properties:
     items:
       - enum:
           - hisilicon,hi3798cv200-usb2-phy
-          - hisilicon,inno-usb2-phy
+          - hisilicon,hi3798mv100-usb2-phy
+      - const: hisilicon,inno-usb2-phy
 
   reg:
     maxItems: 1
@@ -69,7 +70,7 @@ additionalProperties: false
 examples:
   - |
     usb2-phy@120 {
-        compatible = "hisilicon,hi3798cv200-usb2-phy";
+        compatible = "hisilicon,hi3798cv200-usb2-phy", "hisilicon,inno-usb2-phy";
         reg = <0x120 0x4>;
         clocks = <&clk_ref>;
         resets = <&crg 0xbc 4>;
