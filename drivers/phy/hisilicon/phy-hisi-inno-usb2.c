@@ -185,6 +185,7 @@ static const struct of_device_id hisi_inno_phy_of_match[] = {
 	{ .compatible = "hisilicon,inno-usb2-phy", },
 	{ .compatible = "hisilicon,hi3798cv200-usb2-phy", },
 	{ .compatible = "hisilicon,hi3798mv100-usb2-phy", },
+	{ .compatible = "hisilicon,hi3798mv200-usb2-phy", },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, hisi_inno_phy_of_match);
