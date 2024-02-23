@@ -17,11 +17,6 @@ properties:
           - hisilicon,hi3798mv100-usb2-phy
       - const: hisilicon,inno-usb2-phy
 
-  reg:
-    maxItems: 1
-    description: Should be the address space for PHY configuration register in
-      peripheral controller, e.g. PERI_USB0 for USB 2.0 PHY01 on Hi3798CV200 SoC.
-
   '#address-cells':
     const: 1
 
@@ -60,7 +55,6 @@ patternProperties:
 required:
   - compatible
   - clocks
-  - reg
   - '#address-cells'
   - '#size-cells'
   - resets
@@ -69,9 +63,8 @@ additionalProperties: false
 
 examples:
   - |
-    usb2-phy@120 {
+    usb2-phy {
         compatible = "hisilicon,hi3798cv200-usb2-phy", "hisilicon,inno-usb2-phy";
-        reg = <0x120 0x4>;
         clocks = <&clk_ref>;
         resets = <&crg 0xbc 4>;
         #address-cells = <1>;
