@@ -13,6 +13,7 @@
 #include <linux/of.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
 
@@ -181,6 +182,30 @@ static int hisi_inno_phy_probe(struct platform_device *pdev)
 	return PTR_ERR_OR_ZERO(provider);
 }
 
+static int __maybe_unused hisi_inno_phy_runtime_suspend(struct device *dev)
+{
+	int ret = 0;
+
+	if (dev->parent)
+		ret = pm_runtime_put_autosuspend(dev->parent);
+
+	return ret;
+}
+
+static int __maybe_unused hisi_inno_phy_runtime_resume(struct device *dev)
+{
+	int ret = 0;
+
+	if (dev->parent)
+		ret = pm_runtime_resume_and_get(dev->parent);
+
+	return ret;
+}
+
+static const struct dev_pm_ops hisi_inno_phy_pm_ops = {
+	RUNTIME_PM_OPS(hisi_inno_phy_runtime_suspend, hisi_inno_phy_runtime_resume, NULL)
+};
+
 static const struct of_device_id hisi_inno_phy_of_match[] = {
 	{ .compatible = "hisilicon,inno-usb2-phy", },
 	{ .compatible = "hisilicon,hi3798cv200-usb2-phy", },
@@ -195,6 +220,7 @@ static struct platform_driver hisi_inno_phy_driver = {
 	.driver = {
 		.name	= "hisi-inno-phy",
 		.of_match_table	= hisi_inno_phy_of_match,
+		.pm	= &hisi_inno_phy_pm_ops,
 	}
 };
 module_platform_driver(hisi_inno_phy_driver);
