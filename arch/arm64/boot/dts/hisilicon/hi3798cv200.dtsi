@@ -5,7 +5,8 @@
  * Copyright (c) 2016-2017 HiSilicon Technologies Co., Ltd.
  */
 
-#include <dt-bindings/clock/histb-clock.h>
+#include <dt-bindings/clock/hisilicon,hi3798cv200-crg.h>
+#include <dt-bindings/clock/hisilicon,hi3798cv200-sysctrl.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/phy/phy.h>
@@ -31,6 +32,13 @@
 			device_type = "cpu";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
+			d-cache-size = <0x8000>; /* 32 KiB */
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
+			i-cache-size = <0x8000>; /* 32 KiB */
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			next-level-cache = <&L2>;
 		};
 
 		cpu@1 {
@@ -38,6 +46,13 @@
 			device_type = "cpu";
 			reg = <0x0 0x1>;
 			enable-method = "psci";
+			d-cache-size = <0x8000>; /* 32 KiB */
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
+			i-cache-size = <0x8000>; /* 32 KiB */
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			next-level-cache = <&L2>;
 		};
 
 		cpu@2 {
@@ -45,6 +60,13 @@
 			device_type = "cpu";
 			reg = <0x0 0x2>;
 			enable-method = "psci";
+			d-cache-size = <0x8000>; /* 32 KiB */
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
+			i-cache-size = <0x8000>; /* 32 KiB */
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			next-level-cache = <&L2>;
 		};
 
 		cpu@3 {
@@ -52,13 +74,33 @@
 			device_type = "cpu";
 			reg = <0x0 0x3>;
 			enable-method = "psci";
+			d-cache-size = <0x8000>; /* 32 KiB */
+			d-cache-line-size = <64>;
+			d-cache-sets = <128>;
+			i-cache-size = <0x8000>; /* 32 KiB */
+			i-cache-line-size = <64>;
+			i-cache-sets = <256>;
+			next-level-cache = <&L2>;
 		};
+	};
+
+	L2: l2-cache {
+		compatible = "cache";
+		cache-unified;
+		cache-size = <0x80000>; /* 512 KiB */
+		cache-line-size = <64>;
+		cache-sets = <512>;
+		cache-level = <2>;
 	};
 
 	gic: interrupt-controller@f1001000 {
 		compatible = "arm,gic-400";
 		reg = <0x0 0xf1001000 0x0 0x1000>,  /* GICD */
-		      <0x0 0xf1002000 0x0 0x100>;   /* GICC */
+		      <0x0 0xf1002000 0x0 0x2000>,  /* GICC */
+		      <0x0 0xf1004000 0x0 0x2000>,  /* GICH */
+		      <0x0 0xf1006000 0x0 0x2000>;  /* GICV */
+		interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(4) |
+			      IRQ_TYPE_LEVEL_HIGH)>;
 		#address-cells = <0>;
 		#interrupt-cells = <3>;
 		interrupt-controller;
@@ -113,39 +155,53 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x8a20000 0x1000>;
 
-			usb2_phy1: usb2_phy@120 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy";
+			usb2_phy1_bus: usb2-phy-bus@120 {
+				compatible = "hisilicon,hi3798cv200-usb2phy-test-bus";
 				reg = <0x120 0x4>;
-				clocks = <&crg HISTB_USB2_PHY1_REF_CLK>;
-				resets = <&crg 0xbc 4>;
-				#address-cells = <1>;
-				#size-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&usb2_phy1_bus>;
 
-				usb2_phy1_port0: phy@0 {
-					reg = <0>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 8>;
-				};
+				usb2_phy1: usb2phy {
+					compatible = "hisilicon,hi3798cv200-usb2-phy",
+						     "hisilicon,inno-usb2-phy";
+					clocks = <&crg HISTB_USB2_PHY1_REF_CLK>;
+					resets = <&crg 0xbc 4>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 
-				usb2_phy1_port1: phy@1 {
-					reg = <1>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 9>;
+					usb2_phy1_port0: phy@0 {
+						reg = <0>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 8>;
+					};
+
+					usb2_phy1_port1: phy@1 {
+						reg = <1>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 9>;
+					};
 				};
 			};
 
-			usb2_phy2: usb2_phy@124 {
-				compatible = "hisilicon,hi3798cv200-usb2-phy";
+			usb2_phy2_bus: usb2-phy-bus@124 {
+				compatible = "hisilicon,hi3798cv200-usb2phy-test-bus";
 				reg = <0x124 0x4>;
-				clocks = <&crg HISTB_USB2_PHY2_REF_CLK>;
-				resets = <&crg 0xbc 6>;
-				#address-cells = <1>;
-				#size-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&usb2_phy2_bus>;
 
-				usb2_phy2_port0: phy@0 {
-					reg = <0>;
-					#phy-cells = <0>;
-					resets = <&crg 0xbc 10>;
+				usb2_phy2: usb2phy {
+					compatible = "hisilicon,hi3798cv200-usb2-phy",
+						     "hisilicon,inno-usb2-phy";
+					clocks = <&crg HISTB_USB2_PHY2_REF_CLK>;
+					resets = <&crg 0xbc 6>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					usb2_phy2_port0: phy@0 {
+						reg = <0>;
+						#phy-cells = <0>;
+						resets = <&crg 0xbc 10>;
+					};
 				};
 			};
 

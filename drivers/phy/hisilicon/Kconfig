@@ -57,6 +57,7 @@ config PHY_HISI_INNO_USB2
 	depends on ARCH_HISI || COMPILE_TEST
 	select GENERIC_PHY
 	select MFD_SYSCON
+	select REGMAP
 	help
 	  Support for INNO USB2 PHY on HiSilicon SoCs. This Phy supports
 	  USB 1.5Mb/s, USB 12Mb/s, USB 480Mb/s speeds. It supports one
